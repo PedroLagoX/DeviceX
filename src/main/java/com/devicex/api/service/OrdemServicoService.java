@@ -158,6 +158,12 @@ public class OrdemServicoService {
             );
         }
 
+        StatusOrdemServico statusAnterior =
+                ordemExistente.getStatus();
+
+        StatusOrdemServico novoStatus =
+                ordemServico.getStatus();
+
         ordemExistente.setCliente(cliente);
         ordemExistente.setDispositivo(dispositivo);
         ordemExistente.setDescricaoProblema(
@@ -172,12 +178,36 @@ public class OrdemServicoService {
         ordemExistente.setValor(
                 ordemServico.getValor()
         );
+        ordemExistente.setStatus(novoStatus);
         ordemExistente.setObservacoes(
                 ordemServico.getObservacoes()
         );
 
+        if (novoStatus == StatusOrdemServico.ENTREGUE
+                || novoStatus == StatusOrdemServico.CANCELADO
+                || novoStatus == StatusOrdemServico.REPROVADO) {
+
+            if (statusAnterior != novoStatus
+                    || ordemExistente.getDataConclusao() == null) {
+
+                ordemExistente.setDataConclusao(
+                        LocalDateTime.now()
+                );
+            }
+
+        } else {
+            ordemExistente.setDataConclusao(null);
+        }
+
         OrdemServico ordemAtualizada =
                 ordemServicoRepository.save(ordemExistente);
+
+        if (statusAnterior != novoStatus) {
+            registrarHistorico(
+                    ordemAtualizada,
+                    novoStatus
+            );
+        }
 
         return converterParaDTO(ordemAtualizada);
     }
